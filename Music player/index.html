@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Player</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background: #121212;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    .player {
+        width: 350px;
+        background: #1e1e1e;
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 0 25px rgba(0,0,0,0.4);
+        color: white;
+    }
+
+    .song-info {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .song-info h3 {
+        margin: 5px 0;
+    }
+
+    /* PROGRESS BAR */
+    .progress-container {
+        background: #333;
+        height: 6px;
+        width: 100%;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 15px 0;
+    }
+    .progress {
+        background: #ff9500;
+        height: 100%;
+        width: 0%;
+        border-radius: 5px;
+    }
+
+    /* CONTROLS */
+    .controls {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        margin-top: 15px;
+    }
+
+    .controls button {
+        background: #333;
+        border: none;
+        padding: 12px;
+        border-radius: 50%;
+        cursor: pointer;
+        color: white;
+        transition: 0.2s;
+    }
+
+    .controls button:hover {
+        background: #555;
+    }
+
+    /* VOLUME */
+    .volume-box {
+        margin-top: 20px;
+    }
+    .volume-box input {
+        width: 100%;
+    }
+
+    /* PLAYLIST */
+    .playlist {
+        margin-top: 20px;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+
+    .playlist div {
+        padding: 10px;
+        background: #222;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .playlist div:hover {
+        background: #333;
+    }
+
+    .active-song {
+        background: #ff9500 !important;
+        color: black;
+    }
+
+</style>
+</head>
+<body>
+
+<div class="player">
+    <div class="song-info">
+        <h2 id="title">Song Title</h2>
+        <h3 id="artist">Artist Name</h3>
+        <div id="time">00:00 / 00:00</div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-container" onclick="setProgress(event)">
+        <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button onclick="prevSong()">⏮</button>
+        <button onclick="playPause()">⏯</button>
+        <button onclick="nextSong()">⏭</button>
+    </div>
+
+    <!-- Volume -->
+    <div class="volume-box">
+        <label>Volume</label>
+        <input type="range" min="0" max="1" step="0.01" id="volume">
+    </div>
+
+    <!-- Playlist -->
+    <div class="playlist" id="playlist"></div>
+</div>
+
+<script>
+    const audio = new Audio();
+
+    const songs = [
+        {
+            title: "Song One",
+            artist: "Artist A",
+            src: "https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3"
+        },
+        {
+            title: "Song Two",
+            artist: "Artist B",
+            src: "https://www.learningcontainer.com/wp-content/uploads/2020/02/Happy.mp3"
+        },
+        {
+            title: "Song Three",
+            artist: "Artist C",
+            src: "https://www.learningcontainer.com/wp-content/uploads/2020/02/SampleAudio_0.7mb.mp3"
+        }
+    ];
+
+    let currentSong = 0;
+
+    const title = document.getElementById("title");
+    const artist = document.getElementById("artist");
+    const time = document.getElementById("time");
+    const progress = document.getElementById("progress");
+    const volume = document.getElementById("volume");
+    const playlistDiv = document.getElementById("playlist");
+
+    // LOAD SONG
+    function loadSong(index) {
+        const s = songs[index];
+        audio.src = s.src;
+        title.innerText = s.title;
+        artist.innerText = s.artist;
+
+        updatePlaylistUI();
+    }
+
+    // PLAY / PAUSE
+    function playPause() {
+        if (audio.paused) {
+            audio.play();
+        } else {
+            audio.pause();
+        }
+    }
+
+    // NEXT
+    function nextSong() {
+        currentSong = (currentSong + 1) % songs.length;
+        loadSong(currentSong);
+        audio.play();
+    }
+
+    // PREVIOUS
+    function prevSong() {
+        currentSong = (currentSong - 1 + songs.length) % songs.length;
+        loadSong(currentSong);
+        audio.play();
+    }
+
+    // UPDATE PROGRESS BAR
+    audio.addEventListener("timeupdate", () => {
+        const percent = (audio.currentTime / audio.duration) * 100;
+        progress.style.width = percent + "%";
+
+        const cur = formatTime(audio.currentTime);
+        const dur = formatTime(audio.duration);
+        time.innerText = `${cur} / ${dur}`;
+    });
+
+    // SET PROGRESS
+    function setProgress(e) {
+        const width = e.target.clientWidth;
+        const clickX = e.offsetX;
+        const duration = audio.duration;
+        audio.currentTime = (clickX / width) * duration;
+    }
+
+    // FORMAT TIME
+    function formatTime(sec) {
+        if (isNaN(sec)) return "00:00";
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return `${m}:${s < 10 ? "0" + s : s}`;
+    }
+
+    // VOLUME CONTROL
+    volume.addEventListener("input", () => {
+        audio.volume = volume.value;
+    });
+
+    // AUTOPLAY NEXT SONG
+    audio.addEventListener("ended", nextSong);
+
+    // PLAYLIST UI
+    function updatePlaylistUI() {
+        playlistDiv.innerHTML = "";
+        songs.forEach((song, index) => {
+            const div = document.createElement("div");
+            div.innerText = `${song.title} - ${song.artist}`;
+            div.className = index === currentSong ? "active-song" : "";
+            div.onclick = () => {
+                currentSong = index;
+                loadSong(index);
+                audio.play();
+            };
+            playlistDiv.appendChild(div);
+        });
+    }
+
+    // INIT
+    loadSong(currentSong);
+</script>
+
+</body>
+</html>
